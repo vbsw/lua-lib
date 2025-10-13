@@ -119,38 +119,54 @@ local function searchPairsWithoutSpace(cmdLine, args, searchTerms, searchTermsN,
 	args.n = argsN
 end
 
-local function search_func(cmdLine, ...)
+local function search(cmdLine, ...)
 	local args = {keys = {}, values = {}, n = 0}
 	local matched, argumentsN = cmdLine.matched, cmdLine.n
 	if not matched[argumentsN+1] then
 		local paramsN = select("#", ...)
 		if argumentsN > 0 and paramsN > 0 then
-			local searchTerms, searchTermsN, delimiter = extractSearchParams(paramsN, ...)
+			local searchTerms, searchTermsN = extractSearchParams(paramsN, ...)
 			if searchTermsN > 0 then
-				local arguments, delimiter, allMatched = cmdLine.arguments, cmdLine.delimiter, true
-				if delimiter == nil or not delimiter.enabled then
-					local keys, argsN = args.keys, 0
-					for i = 1, argumentsN do
-						if not matched[i] then
-							for j = 1, searchTermsN do
-								local argument = arguments[i]
-								if argument == searchTerms[j] then
-									local argsNNxt = argsN+1
-									keys[argsNNxt], argsN, matched[i] = argument, argsNNxt, true
-									break
-								end
+				local arguments, allMatched = cmdLine.arguments, true
+				local keys, argsN = args.keys, 0
+				for i = 1, argumentsN do
+					if not matched[i] then
+						for j = 1, searchTermsN do
+							local argument = arguments[i]
+							if argument == searchTerms[j] then
+								local argsNNxt = argsN+1
+								keys[argsNNxt], argsN, matched[i] = argument, argsNNxt, true
+								break
 							end
-							allMatched = allMatched and matched[i]
 						end
+						allMatched = allMatched and matched[i]
 					end
-					matched[argumentsN+1] = allMatched
-					args.n = argsN
-				else
+				end
+				matched[argumentsN+1] = allMatched
+				args.n = argsN
+			end
+		end
+	end
+	return args
+end
+
+local function searchByDelimiter(cmdLine, ...)
+	local args = {keys = {}, values = {}, n = 0}
+	local matched, argumentsN = cmdLine.matched, cmdLine.n
+	if not matched[argumentsN+1] then
+		local paramsN = select("#", ...)
+		if argumentsN > 0 and paramsN > 0 then
+			local searchTerms, searchTermsN = extractSearchParams(paramsN, ...)
+			if searchTermsN > 0 then
+				local delimiter = cmdLine.delimiter
+				if delimiter ~= nil then
 					if delimiter.hasSpace then
 						searchPairsWithSpace(cmdLine, args, searchTerms, searchTermsN, delimiter)
 					else
 						searchPairsWithoutSpace(cmdLine, args, searchTerms, searchTermsN, delimiter)
 					end
+				else
+					error("delimiter is nil")
 				end
 			end
 		end
@@ -158,7 +174,7 @@ local function search_func(cmdLine, ...)
 	return args
 end
 
-local function unmatched_func(cmdLine)
+local function unmatched(cmdLine)
 	local args, argsN = {}, 0
 	local arguments, matched, argumentsN = cmdLine.arguments, cmdLine.matched, cmdLine.n
 	if not matched[argumentsN+1] then
@@ -173,15 +189,22 @@ local function unmatched_func(cmdLine)
 	return args
 end
 
-local function newCmdLine_func(args, ...)
+---@param args string[] array of strings representing command line
+---@param ... integer two optional parameters (from, to); defines subarray of args
+function newCL(args, ...)
 	local from, to
 	local cmdLine = {arguments = {}, matched = {}, n = 0}
-	local optsN = select("#", ...)
+	local optsN, argsLen, index = select("#", ...), #args, 0
 	if optsN > 0 then
 		local opt1 = select(1, ...)
+		-- opt1 must be integer (math.type is not available in Lua 5.1)
 		if type(opt1) == "number" then
 			if opt1 > 0 then
-				from = opt1
+				if opt1 < argsLen then
+					from = opt1
+				else
+					from = argsLen
+				end
 			else
 				from = 1
 			end
@@ -190,35 +213,38 @@ local function newCmdLine_func(args, ...)
 		end
 		if optsN > 1 then
 			local opt2 = select(2, ...)
+			-- opt2 must be integer (math.type is not available in Lua 5.1)
 			if type(opt2) == "number" then
-				if opt2 > 0 then
+				if opt1 > opt2 then
 					to = opt2
 				else
-					to = 0
+					to = opt1
 				end
 			else
 				error("3nd parameter not a number")
 			end
 		else
-			to = #args
+			to = argsLen
 		end
 	else
-		from, to = 1, #args
+		from, to = 1, argsLen
 	end
 	for i = from, to do
-		local indexNew = i-from+1
-		cmdLine.arguments[indexNew] = args[i]
-		cmdLine.matched[indexNew] = false
+		index = index + 1
+		cmdLine.arguments[index] = args[i]
+		cmdLine.matched[index] = false
 	end
-	cmdLine.n = to-from+1
+	cmdLine.n = index
 	-- last value means all arguments are matched
-	cmdLine.matched[cmdLine.n+1] = (cmdLine.n == 0)
-	cmdLine.search = search_func
-	cmdLine.unmatched = unmatched_func
+	cmdLine.matched[index+1] = (index == 0)
+	cmdLine.search = search
+	cmdLine.searchByDelimiter = searchByDelimiter
+	cmdLine.unmatched = unmatched
 	return cmdLine
 end
 
-local function newDelimiter_func(enabled, ...)
+---@param ... string delimiters, e.g. "", " ", "="
+function newCLDelimiter(...)
 	local delimiter, n, hasEmpty, hasSpace, paramsN = {}, 0, false, false, select("#", ...)
 	for i = 1, paramsN do
 		local value = select(i, ...)
@@ -233,8 +259,6 @@ local function newDelimiter_func(enabled, ...)
 			end
 		end
 	end
-	delimiter.n, delimiter.hasEmpty, delimiter.hasSpace, delimiter.enabled = n, hasEmpty, hasSpace, enabled
+	delimiter.n, delimiter.hasEmpty, delimiter.hasSpace = n, hasEmpty, hasSpace
 	return delimiter
 end
-
-return {newCmdLine = newCmdLine_func, newDelimiter = newDelimiter_func}
