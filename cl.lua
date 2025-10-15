@@ -191,7 +191,7 @@ end
 
 ---@param args string[] array of strings representing command line
 ---@param ... integer two optional parameters (from, to); defines subarray of args
-function newCL(args, ...)
+function clNew(args, ...)
 	local from, to
 	local cmdLine = {arguments = {}, matched = {}, n = 0}
 	local optsN, argsLen, index = select("#", ...), #args, 0
@@ -244,7 +244,7 @@ function newCL(args, ...)
 end
 
 ---@param ... string delimiters, e.g. "", " ", "="
-function newCLDelimiter(...)
+function clNewDelimiter(...)
 	local delimiter, n, hasEmpty, hasSpace, paramsN = {}, 0, false, false, select("#", ...)
 	for i = 1, paramsN do
 		local value = select(i, ...)
