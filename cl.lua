@@ -42,8 +42,8 @@ local function matchByPrefix(argument, argumentN, searchTerm, searchTermN, delim
 	return nil
 end
 
-local function searchPairsWithSpace(cmdLine, args, searchTerms, searchTermsN, delimiter)
-	local arguments, matched, argumentsN = cmdLine.arguments, cmdLine.matched, cmdLine.n
+local function searchPairsWithSpace(cmdLine, args, searchTerms, searchTermsN)
+	local arguments, matched, argumentsN, delimiter = cmdLine.arguments, cmdLine.matched, cmdLine.n, cmdLine.delimiter
 	local keys, values, argsN = args.keys, args.values, args.n
 	local i, allMatched = 1, true
 	while i <= argumentsN do
@@ -84,9 +84,9 @@ local function searchPairsWithSpace(cmdLine, args, searchTerms, searchTermsN, de
 	args.n = argsN
 end
 
-local function searchPairsWithoutSpace(cmdLine, args, searchTerms, searchTermsN, delimiter)
-	local arguments, matched, argumentsN, hasEmptyDelimiter = cmdLine.arguments, cmdLine.matched, cmdLine.n, delimiter.hasEmpty
-	local keys, values, argsN = args.keys, args.values, args.n
+local function searchPairsWithoutSpace(cmdLine, args, searchTerms, searchTermsN)
+	local arguments, matched, argumentsN, delimiter = cmdLine.arguments, cmdLine.matched, cmdLine.n, cmdLine.delimiter
+	local hasEmptyDelimiter, keys, values, argsN = delimiter.hasEmpty, args.keys, args.values, args.n
 	local i, allMatched = 1, true
 	for i = 1, argumentsN do
 		if not matched[i] then
@@ -158,12 +158,11 @@ local function searchByDelimiter(cmdLine, ...)
 		if argumentsN > 0 and paramsN > 0 then
 			local searchTerms, searchTermsN = extractSearchParams(paramsN, ...)
 			if searchTermsN > 0 then
-				local delimiter = cmdLine.delimiter
-				if delimiter ~= nil then
-					if delimiter.hasSpace then
-						searchPairsWithSpace(cmdLine, args, searchTerms, searchTermsN, delimiter)
+				if cmdLine.delimiter then
+					if cmdLine.delimiter.hasSpace then
+						searchPairsWithSpace(cmdLine, args, searchTerms, searchTermsN)
 					else
-						searchPairsWithoutSpace(cmdLine, args, searchTerms, searchTermsN, delimiter)
+						searchPairsWithoutSpace(cmdLine, args, searchTerms, searchTermsN)
 					end
 				else
 					error("delimiter is nil")
