@@ -1,14 +1,14 @@
-# lualib
+# lua-lib
 
 ## About
-lualib is a collection of Lua libraries. It is published on <https://github.com/vbsw/lualib> and <https://codeberg.org/vbsw/lualib>.
+lua-lib is a collection of Lua libraries. It is published on <https://github.com/vbsw/lua-lib>.
 
 ## Copyright
 Copyright 2025, Vitali Baumtrok (vbsw@mailbox.org).
 
-lualib is distributed under the Boost Software License, version 1.0. (See accompanying file LICENSE or copy at http://www.boost.org/LICENSE_1_0.txt)
+lua-lib is distributed under the Boost Software License, version 1.0. (See accompanying file LICENSE or copy at http://www.boost.org/LICENSE_1_0.txt)
 
-lualib is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the Boost Software License for more details.
+lua-lib is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the Boost Software License for more details.
 
 ## Libraries
 
